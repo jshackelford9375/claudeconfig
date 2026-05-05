@@ -291,8 +291,7 @@ $Statusline = @'
 input=$(cat)
 MODEL=$(echo "$input" | jq -r '.model.display_name')
 PCT=$(echo "$input" | jq -r '.context_window.used_percentage // 0' | cut -d. -f1)
-RL5H=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // 0' | cut -d. -f1)
-RL7D=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // 0' | cut -d. -f1)
+COST=$(echo "$input" | jq -r '.cost.total_cost_usd // 0')
 
 color_for() {
   local p=$1
@@ -302,11 +301,10 @@ color_for() {
 }
 RESET=$'\033[0m'
 
-printf "[%s] Ctx: %s%s%%%s | 5h: %s%s%%%s | 7d: %s%s%%%s" \
+printf "[%s] Ctx: %s%s%%%s | Cost: \$%.2f" \
   "$MODEL" \
   "$(color_for "$PCT")" "$PCT" "$RESET" \
-  "$(color_for "$RL5H")" "$RL5H" "$RESET" \
-  "$(color_for "$RL7D")" "$RL7D" "$RESET"
+  "$COST"
 '@
 $StatuslineLF = $Statusline -replace "`r`n", "`n"
 [System.IO.File]::WriteAllText($StatuslinePath, $StatuslineLF, [System.Text.UTF8Encoding]::new($false))
@@ -383,7 +381,7 @@ if ($LinesToAdd.Count -gt 0) {
 # ---------------------------------------------------------------------------
 
 Write-Step "Status line sanity check"
-$TestJson = '{"model":{"display_name":"Opus"},"context_window":{"used_percentage":34},"rate_limits":{"five_hour":{"used_percentage":18},"seven_day":{"used_percentage":42}}}'
+$TestJson = '{"model":{"display_name":"Opus"},"context_window":{"used_percentage":34},"cost":{"total_cost_usd":0.4123}}'
 # Pipe via PowerShell stdin -- bash -c with embedded quotes mangles JSON
 $Output = $TestJson | & $GitBash -c "~/.claude/statusline.sh"
 Write-Host "   $Output"
